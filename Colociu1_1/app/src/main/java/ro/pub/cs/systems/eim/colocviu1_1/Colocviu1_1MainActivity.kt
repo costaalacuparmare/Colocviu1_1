@@ -1,6 +1,8 @@
 package ro.pub.cs.systems.eim.colocviu1_1
 
+import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import ro.pub.cs.systems.eim.colocviu1_1.ui.theme.Colocviu1_1MainActivityTheme
 
 class MainActivity : ComponentActivity() {
@@ -45,6 +48,22 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    private lateinit var receiver: Colocviu1_1BroadcastReceiver
+
+    class Colocviu1_1BroadcastReceiver : BroadcastReceiver() {
+
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val datetime = intent?.getStringExtra("datetime")
+            val butt = intent?.getStringExtra("butt")
+            val count = intent?.getIntExtra("count", 0)
+            Log.d("PracticalTest01Broadcast", "Broadcast received: datetime=$datetime, butt=$butt, count=$count")
+
+            context?.let {
+                Toast.makeText(it, "Broadcast received: datetime=$datetime, butt=$butt, count=$count", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
             pressedButton = mutableStateOf(savedInstanceState.getString("butt", ""))
@@ -53,6 +72,15 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.d(TAG, "onCreate: fresh start butt=${pressedButton} count=${nrPresses}")
         }
+
+        receiver = Colocviu1_1BroadcastReceiver()
+
+        ContextCompat.registerReceiver(
+            this,
+            receiver,
+            android.content.IntentFilter(PRIMARY_ACTION),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -64,6 +92,14 @@ class MainActivity : ComponentActivity() {
                         onPress = { direction ->
                             pressedButton.value += "$direction, "
                             nrPresses.intValue += 1
+
+                            if (nrPresses.intValue > 4) {
+                                val serviceIntent = Intent(this, Colocviu1_1Service::class.java).apply {
+                                    putExtra("butt", pressedButton.value)
+                                    putExtra("count", nrPresses.intValue)
+                                }
+                                startService(serviceIntent)
+                            }
                         },
                         nrPresses = nrPresses.intValue,
                         pressedButton = pressedButton.value,
@@ -101,6 +137,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(receiver)
+        val serviceIntent = Intent(this, Colocviu1_1Service::class.java)
+        stopService(serviceIntent)
         Log.d(TAG, "onDestroy: butt=${pressedButton} count=${nrPresses}")
     }
 }
@@ -196,6 +235,5 @@ fun GreetingPreview() {
     Colocviu1_1MainActivityTheme {
         Colocviu1_UI(
         )
-
     }
 }
