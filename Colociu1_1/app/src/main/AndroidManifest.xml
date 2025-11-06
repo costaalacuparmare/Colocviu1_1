@@ -12,6 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Colocviu1_1MainActivity">
         <activity
+            android:name=".Colocviu1_1SecondaryActivity"
+            android:exported="false"
+            android:label="@string/title_activity_colocviu11_secondary"
+            android:theme="@style/Theme.Colocviu1_1MainActivity" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
