@@ -10,12 +10,6 @@ import java.text.SimpleDateFormat
 
 class Colocviu1_1Service : Service() {
 
-    override fun onBind(intent: Intent): IBinder ? {
-        return null
-    }
-}
-class PracticalTest01Service : Service() {
-
     private val handler = Handler(Looper.getMainLooper())
     var pressed: String = ""
     var count: Int = 0
