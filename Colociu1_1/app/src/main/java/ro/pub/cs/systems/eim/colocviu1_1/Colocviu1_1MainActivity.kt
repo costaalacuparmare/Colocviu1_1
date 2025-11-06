@@ -4,9 +4,11 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,13 +28,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ro.pub.cs.systems.eim.colocviu1_1.ui.theme.Colocviu1_1MainActivityTheme
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 class MainActivity : ComponentActivity() {
 
     var pressedButton = mutableStateOf("")
     var nrPresses = mutableIntStateOf(0)
+
+    private val secondaryActivityLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_REGISTER) {
+                Toast.makeText(this, "Registered!", Toast.LENGTH_SHORT).show()
+                pressedButton = mutableStateOf("")
+                nrPresses.intValue = 0
+            } else if (result.resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Canceled!", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
@@ -55,7 +66,16 @@ class MainActivity : ComponentActivity() {
                             nrPresses.intValue += 1
                         },
                         nrPresses = nrPresses.intValue,
-                        pressedButton = pressedButton.value
+                        pressedButton = pressedButton.value,
+                        onSecondaryActivity = {
+                            val intent = Intent(
+                                this,
+                                Colocviu1_1SecondaryActivity::class.java
+                            )
+                            intent.putExtra("but", pressedButton.value)
+                            intent.putExtra("count", nrPresses.intValue)
+                            secondaryActivityLauncher.launch(intent)
+                        }
                     )
                 }
             }
@@ -90,7 +110,8 @@ fun Colocviu1_UI(
     modifier: Modifier = Modifier,
     onPress: (String) -> Unit = { _ -> },
     nrPresses: Int = 0,
-    pressedButton: String = ""
+    pressedButton: String = "",
+    onSecondaryActivity: () -> Unit = { }
 ) {
     Column(
         modifier = modifier
@@ -163,7 +184,7 @@ fun Colocviu1_UI(
         Spacer(modifier = Modifier.height(20.dp))
 
         // centered button below the buttons
-        Button(onClick = { /* TODO */ }) {
+        Button(onClick = { onSecondaryActivity() }) {
             Text("Go to Second Activity")
         }
     }
